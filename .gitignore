@@ -16,6 +16,8 @@
 # Rust build artifacts
 /target/
 **/target/
+# Sidecar symlink created by `make link-cli` (points into target/)
+macrdp-ui/src-tauri/macrdp-server
 # Environment
 # IDE
 # Log files
