@@ -1,5 +1,6 @@
 import { useRef, useCallback } from "react";
 import { Play, Square, Loader2 } from "lucide-react";
+import { useI18n } from "../i18n";
 
 interface StatusBarProps {
   state: "running" | "starting" | "stopped" | "error";
@@ -21,27 +22,27 @@ function formatUptime(seconds: number): string {
 
 const statusConfig: Record<
   StatusBarProps["state"],
-  { dotClass: string; glowColor: string; label: string }
+  { dotClass: string; glowColor: string; labelKey: string }
 > = {
   running: {
     dotClass: "bg-green",
     glowColor: "0 0 6px var(--color-green)",
-    label: "运行中",
+    labelKey: "status.running",
   },
   starting: {
     dotClass: "bg-yellow",
     glowColor: "0 0 6px var(--color-yellow)",
-    label: "启动中...",
+    labelKey: "status.starting",
   },
   stopped: {
     dotClass: "bg-text-muted",
     glowColor: "none",
-    label: "已停止",
+    labelKey: "status.stopped",
   },
   error: {
     dotClass: "bg-red",
     glowColor: "0 0 6px var(--color-red)",
-    label: "错误",
+    labelKey: "status.error",
   },
 };
 
@@ -56,6 +57,7 @@ function StatusBar({
   onStart,
   onStop,
 }: StatusBarProps) {
+  const { t } = useI18n();
   const config = statusConfig[state];
   const isError = state === "error";
   const isLoading = loading || state === "starting";
@@ -89,7 +91,7 @@ function StatusBar({
           />
         )}
         <span className="text-sm font-medium truncate">
-          {isError && errorMessage ? errorMessage : config.label}
+          {isError && errorMessage ? errorMessage : t(config.labelKey)}
         </span>
         {!isError && (
           <div className="flex items-center gap-2 text-xs text-text-muted">
@@ -113,7 +115,7 @@ function StatusBar({
             ) : (
               <Square className="h-3 w-3" />
             )}
-            {isLoading ? "处理中..." : "停止"}
+            {isLoading ? t("status.working") : t("status.stop")}
           </button>
         ) : (
           <button
@@ -126,7 +128,7 @@ function StatusBar({
             ) : (
               <Play className="h-3 w-3" />
             )}
-            {isLoading ? "处理中..." : "启动"}
+            {isLoading ? t("status.working") : t("status.start")}
           </button>
         )}
       </div>

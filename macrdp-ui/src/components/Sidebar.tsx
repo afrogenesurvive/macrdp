@@ -11,24 +11,25 @@ import {
 import { api } from "../lib/ipc";
 import type { PermissionStatus } from "../lib/types";
 import ThemeToggle from "./ThemeToggle";
+import { useI18n } from "../i18n";
 
 const navGroups = [
   {
-    label: "服务",
-    items: [{ path: "/", icon: Monitor, label: "控制台" }],
+    labelKey: "nav.group.service",
+    items: [{ path: "/", icon: Monitor, labelKey: "nav.dashboard" }],
   },
   {
-    label: "配置",
+    labelKey: "nav.group.config",
     items: [
-      { path: "/settings", icon: Settings, label: "设置" },
-      { path: "/permissions", icon: Shield, label: "权限" },
+      { path: "/settings", icon: Settings, labelKey: "nav.settings" },
+      { path: "/permissions", icon: Shield, labelKey: "nav.permissions" },
     ],
   },
   {
-    label: "诊断",
+    labelKey: "nav.group.diagnostics",
     items: [
-      { path: "/logs", icon: FileText, label: "日志" },
-      { path: "/statistics", icon: Activity, label: "统计" },
+      { path: "/logs", icon: FileText, labelKey: "nav.logs" },
+      { path: "/statistics", icon: Activity, labelKey: "nav.statistics" },
     ],
   },
 ];
@@ -36,6 +37,7 @@ const navGroups = [
 function Sidebar() {
   const [perms, setPerms] = useState<PermissionStatus | null>(null);
   const location = useLocation();
+  const { t } = useI18n();
 
   useEffect(() => {
     const check = () => api.getPermissions().then(setPerms).catch(() => {});
@@ -62,12 +64,12 @@ function Sidebar() {
       {/* Navigation */}
       <nav role="navigation" className="flex-1 overflow-y-auto px-3">
         {navGroups.map((group) => (
-          <div key={group.label} className="mb-3">
+          <div key={group.labelKey} className="mb-3">
             <div className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-              {group.label}
+              {t(group.labelKey)}
             </div>
             <div className="space-y-0.5">
-              {group.items.map(({ path, icon: Icon, label }) => {
+              {group.items.map(({ path, icon: Icon, labelKey }) => {
                 const active = isActive(path);
                 return (
                   <Link
@@ -86,7 +88,7 @@ function Sidebar() {
                         <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />
                       )}
                     </span>
-                    <span>{label}</span>
+                    <span>{t(labelKey)}</span>
                   </Link>
                 );
               })}
@@ -107,7 +109,7 @@ function Sidebar() {
           }`}
         >
           <Info size={16} />
-          <span>关于</span>
+          <span>{t("nav.about")}</span>
         </Link>
         <div className="mt-2 flex items-center px-2">
           <ThemeToggle />

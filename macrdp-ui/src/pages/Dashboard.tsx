@@ -11,8 +11,10 @@ import { AreaChart } from "../components/AreaChart";
 import ConnItem from "../components/ConnItem";
 import EmptyState from "../components/EmptyState";
 import type { UiConfig } from "../lib/types";
+import { useI18n } from "../i18n";
 
 function Dashboard() {
+  const { t } = useI18n();
   const status = useServerStatus();
   const { metrics, stale } = useMetrics();
   const connections = useConnections();
@@ -89,21 +91,19 @@ function Dashboard() {
 
       <div className="flex gap-3">
         <ChartPanel
-          title="网络速度 (Mbps)"
+          title={t("dashboard.throughput")}
           value={avgBitrate != null ? `${avgBitrate} Mbps` : undefined}
           valueColor="var(--color-green)"
           empty={chartsEmpty}
-          emptyText="等待数据..."
         >
           <AreaChart data={bitrateHistory} color="var(--color-green)" />
         </ChartPanel>
 
         <ChartPanel
-          title="编码延迟 (ms)"
+          title={t("dashboard.encodeLatency")}
           value={avgEncode != null ? `${avgEncode} ms` : undefined}
           valueColor="var(--color-orange)"
           empty={chartsEmpty}
-          emptyText="等待数据..."
         >
           <AreaChart data={encodeHistory} color="var(--color-orange)" />
         </ChartPanel>
@@ -123,13 +123,13 @@ function Dashboard() {
         />
         <MetricCard
           value={metricsAvailable ? metrics.encode_ms : null}
-          label="ms 编码"
+          label={t("dashboard.encodeShort")}
           color="orange"
           formatter={(v) => v.toFixed(1)}
         />
         <MetricCard
           value={metricsAvailable ? connections.length : null}
-          label="连接"
+          label={t("dashboard.connections")}
           color="purple"
         />
       </div>
@@ -137,7 +137,7 @@ function Dashboard() {
       <div className="bg-card rounded-[8px] p-3">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-[11px] text-text-muted font-medium">
-            活跃连接
+            {t("dashboard.activeConnections")}
           </span>
           <span className="text-accent bg-accent/10 rounded-full px-2 text-[10px]">
             {connections.length}
@@ -153,7 +153,7 @@ function Dashboard() {
             ))}
           </div>
         ) : (
-          <EmptyState message="暂无活跃连接" />
+          <EmptyState message={t("dashboard.noActiveConnections")} />
         )}
       </div>
     </div>

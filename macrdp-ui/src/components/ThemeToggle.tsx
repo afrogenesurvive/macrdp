@@ -1,5 +1,6 @@
 import { Monitor, Sun, Moon } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
+import { useI18n } from "../i18n";
 import {
   Tooltip,
   TooltipContent,
@@ -8,11 +9,12 @@ import {
 } from "./ui/tooltip";
 
 const modes = ["light", "dark", "system"] as const;
-const labels = { system: "跟随系统", light: "浅色模式", dark: "深色模式" };
+const labelKeys = { system: "theme.system", light: "theme.light", dark: "theme.dark" };
 const icons = { system: Monitor, light: Sun, dark: Moon };
 
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const { t } = useI18n();
 
   const cycle = () => {
     const idx = modes.indexOf(theme);
@@ -32,7 +34,7 @@ export default function ThemeToggle() {
           <Icon size={16} />
         </TooltipTrigger>
         <TooltipContent side="top">
-          <p>{labels[theme]}</p>
+          <p>{t(labelKeys[theme])}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

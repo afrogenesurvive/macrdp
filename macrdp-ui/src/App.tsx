@@ -10,10 +10,12 @@ import About from "./pages/About";
 import Popover from "./pages/Popover";
 import { api } from "./lib/ipc";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { LanguageProvider, useI18n } from "./i18n";
 
 function MainLayout() {
   const [initialized, setInitialized] = useState(false);
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   useEffect(() => {
     // 先检查服务是否在运行，只有运行中才检查权限
@@ -40,7 +42,7 @@ function MainLayout() {
   if (!initialized) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-bg">
-        <span className="text-sm text-text-muted">加载中...</span>
+        <span className="text-sm text-text-muted">{t("common.loading")}</span>
       </div>
     );
   }
@@ -66,12 +68,14 @@ function MainLayout() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <Routes>
-        <Route path="/popover" element={<Popover />} />
-        <Route path="/*" element={<MainLayout />} />
-      </Routes>
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <Routes>
+          <Route path="/popover" element={<Popover />} />
+          <Route path="/*" element={<MainLayout />} />
+        </Routes>
+      </ThemeProvider>
+    </LanguageProvider>
   );
 }
 

@@ -15,19 +15,21 @@ import { Alert, AlertDescription } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
 import { SettingRow } from "../components/SettingRow";
 import { useTheme } from "../contexts/ThemeContext";
+import { useI18n } from "../i18n";
 
 const categories = [
-  { id: "rdp", label: "RDP 服务" },
-  { id: "network", label: "网络" },
-  { id: "security", label: "安全" },
-  { id: "display", label: "显示" },
-  { id: "audio", label: "音频" },
-  { id: "general", label: "通用" },
+  { id: "rdp", labelKey: "settings.cat.rdp" },
+  { id: "network", labelKey: "settings.cat.network" },
+  { id: "security", labelKey: "settings.cat.security" },
+  { id: "display", labelKey: "settings.cat.display" },
+  { id: "audio", labelKey: "settings.cat.audio" },
+  { id: "general", labelKey: "settings.cat.general" },
 ] as const;
 
 type CategoryId = (typeof categories)[number]["id"];
 
 function Settings() {
+  const { t, lang, setLang } = useI18n();
   const [config, setConfig] = useState<UiConfig | null>(null);
   const [restartRequired, setRestartRequired] = useState(false);
   const [activeCategory, setActiveCategory] = useState<CategoryId>("rdp");
@@ -61,7 +63,7 @@ function Settings() {
   if (!config) {
     return (
       <div className="flex items-center justify-center py-20 text-sm text-text-muted">
-        加载配置中...
+        {t("settings.loading")}
       </div>
     );
   }
@@ -80,7 +82,7 @@ function Settings() {
                 : "text-text-secondary hover:text-text hover:bg-card"
             }`}
           >
-            {cat.label}
+            {t(cat.labelKey)}
           </button>
         ))}
       </nav>
@@ -96,7 +98,7 @@ function Settings() {
             <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
             <AlertDescription className="flex items-center justify-between">
               <span className="text-yellow-800 dark:text-yellow-300 text-xs">
-                部分配置需重启服务后生效
+                {t("settings.restartBanner")}
               </span>
               <Button
                 variant="ghost"
@@ -111,8 +113,8 @@ function Settings() {
         )}
 
         {activeCategory === "rdp" && (
-          <CategorySection title="RDP 服务">
-            <SettingRow label="编码器">
+          <CategorySection title={t("settings.cat.rdp")}>
+            <SettingRow label={t("settings.encoder")}>
               <Select
                 value={config.encoder}
                 onValueChange={(v) => updateConfig("encoder", v)}
@@ -121,13 +123,13 @@ function Settings() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="software">软件编码</SelectItem>
-                  <SelectItem value="hardware">硬件加速</SelectItem>
+                  <SelectItem value="software">{t("settings.encoder.software")}</SelectItem>
+                  <SelectItem value="hardware">{t("settings.encoder.hardware")}</SelectItem>
                 </SelectContent>
               </Select>
             </SettingRow>
 
-            <SettingRow label="比特率">
+            <SettingRow label={t("settings.bitrate")}>
               <Select
                 value={String(config.bitrate_mbps)}
                 onValueChange={(v) => updateConfig("bitrate_mbps", Number(v))}
@@ -145,7 +147,7 @@ function Settings() {
               </Select>
             </SettingRow>
 
-            <SettingRow label="帧率">
+            <SettingRow label={t("settings.frameRate")}>
               <Select
                 value={String(config.frame_rate)}
                 onValueChange={(v) => updateConfig("frame_rate", Number(v))}
@@ -161,7 +163,7 @@ function Settings() {
               </Select>
             </SettingRow>
 
-            <SettingRow label="色度模式">
+            <SettingRow label={t("settings.chromaMode")}>
               <Select
                 value={config.chroma_mode}
                 onValueChange={(v) => updateConfig("chroma_mode", v)}
@@ -179,8 +181,8 @@ function Settings() {
         )}
 
         {activeCategory === "network" && (
-          <CategorySection title="网络">
-            <SettingRow label="端口" description="重启服务生效">
+          <CategorySection title={t("settings.cat.network")}>
+            <SettingRow label={t("settings.port")} description={t("settings.restartRequired")}>
               <Input
                 type="number"
                 value={config.port}
@@ -189,7 +191,7 @@ function Settings() {
               />
             </SettingRow>
 
-            <SettingRow label="绑定地址" description="重启服务生效">
+            <SettingRow label={t("settings.bindAddress")} description={t("settings.restartRequired")}>
               <Input
                 type="text"
                 value={config.bind_address}
@@ -204,7 +206,7 @@ function Settings() {
               />
             </SettingRow>
 
-            <SettingRow label="最大连接数" description="重启服务生效">
+            <SettingRow label={t("settings.maxConnections")} description={t("settings.restartRequired")}>
               <Input
                 type="number"
                 value={config.max_connections}
@@ -215,7 +217,7 @@ function Settings() {
               />
             </SettingRow>
 
-            <SettingRow label="空闲超时 (秒)" description="重启服务生效">
+            <SettingRow label={t("settings.idleTimeout")} description={t("settings.restartRequired")}>
               <Input
                 type="number"
                 value={config.idle_timeout_secs}
@@ -229,8 +231,8 @@ function Settings() {
         )}
 
         {activeCategory === "security" && (
-          <CategorySection title="安全">
-            <SettingRow label="用户名">
+          <CategorySection title={t("settings.cat.security")}>
+            <SettingRow label={t("settings.username")}>
               <Input
                 type="text"
                 value={config.username}
@@ -244,7 +246,7 @@ function Settings() {
               />
             </SettingRow>
 
-            <SettingRow label="密码">
+            <SettingRow label={t("settings.password")}>
               <Input
                 type="password"
                 value={config.password}
@@ -261,8 +263,8 @@ function Settings() {
         )}
 
         {activeCategory === "display" && (
-          <CategorySection title="显示">
-            <SettingRow label="分辨率" description="新连接生效，Auto 跟随屏幕">
+          <CategorySection title={t("settings.cat.display")}>
+            <SettingRow label={t("settings.resolution")} description={t("settings.resolutionHint")}>
               <Select
                 value={config.resolution || "auto"}
                 onValueChange={(v) => updateConfig("resolution", v)}
@@ -291,7 +293,7 @@ function Settings() {
               </Select>
             </SettingRow>
 
-            <SettingRow label="显示光标" description="在采集画面中渲染系统光标">
+            <SettingRow label={t("settings.showCursor")} description={t("settings.showCursorHint")}>
               <Switch
                 checked={config.show_cursor}
                 onCheckedChange={(checked) => updateConfig("show_cursor", checked)}
@@ -301,16 +303,16 @@ function Settings() {
         )}
 
         {activeCategory === "audio" && (
-          <CategorySection title="音频">
+          <CategorySection title={t("settings.cat.audio")}>
             <div className="flex items-center justify-center py-10 text-xs text-text-muted">
-              音频配置尚未开放
+              {t("settings.audioUnavailable")}
             </div>
           </CategorySection>
         )}
 
         {activeCategory === "general" && (
-          <CategorySection title="通用">
-            <SettingRow label="日志级别">
+          <CategorySection title={t("settings.cat.general")}>
+            <SettingRow label={t("settings.logLevel")}>
               <Select
                 value={config.log_level}
                 onValueChange={(v) => updateConfig("log_level", v)}
@@ -328,14 +330,14 @@ function Settings() {
               </Select>
             </SettingRow>
 
-            <SettingRow label="开机自启" description="登录时自动启动服务">
+            <SettingRow label={t("settings.autostart")} description={t("settings.autostartHint")}>
               <Switch
                 checked={config.autostart}
                 onCheckedChange={handleAutostart}
               />
             </SettingRow>
 
-            <SettingRow label="主题">
+            <SettingRow label={t("settings.theme")}>
               <Select
                 value={theme}
                 onValueChange={(v) => {
@@ -346,9 +348,26 @@ function Settings() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="system">跟随系统</SelectItem>
-                  <SelectItem value="light">浅色</SelectItem>
-                  <SelectItem value="dark">深色</SelectItem>
+                  <SelectItem value="system">{t("theme.system")}</SelectItem>
+                  <SelectItem value="light">{t("theme.light")}</SelectItem>
+                  <SelectItem value="dark">{t("theme.dark")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </SettingRow>
+
+            <SettingRow label={t("settings.language")}>
+              <Select
+                value={lang}
+                onValueChange={(v) => {
+                  if (v === "en" || v === "zh") setLang(v);
+                }}
+              >
+                <SelectTrigger className="h-7 w-[120px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="zh">中文</SelectItem>
                 </SelectContent>
               </Select>
             </SettingRow>

@@ -2,29 +2,31 @@ import { useState, useEffect } from "react";
 import { Monitor, MousePointer2, Mic, Check } from "lucide-react";
 import { api } from "../lib/ipc";
 import type { PermissionStatus } from "../lib/types";
+import { useI18n } from "../i18n";
 
 const permissionDefs = [
   {
     key: "screen_capture" as keyof PermissionStatus,
-    name: "屏幕录制",
+    nameKey: "perm.screenRecording",
     pane: "screen_capture",
     icon: Monitor,
   },
   {
     key: "accessibility" as keyof PermissionStatus,
-    name: "辅助功能",
+    nameKey: "perm.accessibility",
     pane: "accessibility",
     icon: MousePointer2,
   },
   {
     key: "microphone" as keyof PermissionStatus,
-    name: "麦克风",
+    nameKey: "perm.microphone",
     pane: "microphone",
     icon: Mic,
   },
 ];
 
 function Permissions() {
+  const { t } = useI18n();
   const [perms, setPerms] = useState<PermissionStatus | null>(null);
 
   useEffect(() => {
@@ -44,13 +46,13 @@ function Permissions() {
 
   return (
     <div className="flex flex-col gap-3 p-4">
-      <h1 className="text-base font-semibold text-text">权限</h1>
+      <h1 className="text-base font-semibold text-text">{t("perm.title")}</h1>
 
       {allGranted && (
         <div className="flex items-center gap-2 rounded-[8px] border border-green/20 bg-green/10 p-3">
           <Check size={16} className="flex-shrink-0 text-green" />
           <span className="text-xs font-medium text-green">
-            所有权限已就绪
+            {t("perm.allGranted")}
           </span>
         </div>
       )}
@@ -68,10 +70,10 @@ function Permissions() {
                 <Icon size={20} className="flex-shrink-0 text-text-muted" />
                 <div>
                   <div className="text-xs font-medium text-text">
-                    {def.name}
+                    {t(def.nameKey)}
                   </div>
                   <div className="text-[11px] text-text-muted">
-                    {granted ? "已授权" : "未授权"}
+                    {granted ? t("perm.granted") : t("perm.notGranted")}
                   </div>
                 </div>
               </div>
@@ -83,7 +85,7 @@ function Permissions() {
                     onClick={() => api.openSystemPreferences(def.pane)}
                     className="rounded-md bg-orange/15 px-2.5 py-1 text-[11px] font-medium text-orange transition-colors hover:bg-orange/25"
                   >
-                    前往系统设置
+                    {t("perm.openSettings")}
                   </button>
                 )}
               </div>

@@ -3,6 +3,24 @@
 Notable changes to macrdp. Entries are `## [<branch>-<n>] — <date>`, where `<n>` is
 one more than the highest existing suffix for that branch.
 
+## [main-2] — 2026-10-05
+
+### Added
+
+- Internationalisation for the UI. `macrdp-ui/src/i18n/` introduces a
+  `LanguageProvider` / `useI18n()` context backed by `en` and `zh` string tables, a
+  `t(key, vars)` lookup with `{name}` interpolation, and a `locale` used for date
+  formatting. The UI previously hard-coded Chinese strings; it now renders in English by
+  default, and Settings gained a **Language** selector (English / 中文). The choice is
+  persisted in `localStorage` under `macrdp.lang`.
+
+### Changed
+
+- Every page and layout component resolves its labels through `t()` instead of literal
+  strings: `App`, `Sidebar`, `StatusBar`, `ThemeToggle`, `ChartPanel`, `Dashboard`,
+  `Settings`, `Permissions`, `Logs`, `Statistics`, `About` and `Popover`. `Statistics`
+  now formats dates with the active locale instead of a fixed `zh-CN`.
+
 ## [main-1] — 2026-09-26
 
 ### Fixed

@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Monitor } from "lucide-react";
 import { api } from "../lib/ipc";
+import { useI18n } from "../i18n";
 
 function About() {
+  const { t } = useI18n();
   const [updateStatus, setUpdateStatus] = useState<
     "idle" | "checking" | "latest" | "available" | "error"
   >("idle");
@@ -30,15 +32,15 @@ function About() {
   const updateLabel = () => {
     switch (updateStatus) {
       case "checking":
-        return "检查中...";
+        return t("about.checking");
       case "latest":
-        return "已是最新";
+        return t("about.latest");
       case "available":
-        return `新版本 ${updateInfo.version ?? ""}`;
+        return t("about.available", { v: updateInfo.version ?? "" });
       case "error":
-        return "检查失败";
+        return t("about.checkFailed");
       default:
-        return "检查更新";
+        return t("about.check");
     }
   };
 
@@ -54,7 +56,7 @@ function About() {
         <div className="text-lg font-semibold text-text">MacRDP</div>
 
         {/* Version */}
-        <div className="mt-0.5 text-xs text-text-muted">版本 1.0.0</div>
+        <div className="mt-0.5 text-xs text-text-muted">{t("about.version", { v: "1.0.0" })}</div>
 
         {/* Separator */}
         <div className="my-3 border-t border-border" />
@@ -93,7 +95,7 @@ function About() {
               rel="noopener noreferrer"
               className="text-xs text-accent hover:underline"
             >
-              前往下载
+              {t("about.download")}
             </a>
           </div>
         )}
