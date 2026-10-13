@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "crates/ironrdp-pdu-patched",
     "crates/macrdp-core",
     "crates/macrdp-server",
     "crates/macrdp-capture",
@@ -13,6 +14,7 @@ members = [
 [patch.crates-io]
 ironrdp-server = { path = "crates/ironrdp-server-gfx" }
 ironrdp-acceptor = { path = "crates/ironrdp-acceptor-patched" }
+ironrdp-pdu = { path = "crates/ironrdp-pdu-patched" }
 
 [workspace.package]
 edition = "2021"

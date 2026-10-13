@@ -95,8 +95,9 @@ crates/
 ├── macrdp-input/        键鼠注入
 ├── macrdp-encode/       视频编码
 ├── ironrdp-server-gfx/  RDP 协议层 (IronRDP fork)
-└── ironrdp-acceptor-patched/
-                         RDP 连接接受器
+├── ironrdp-acceptor-patched/
+│                        RDP 连接接受器
+└── ironrdp-pdu-patched/ RDP PDU 编解码 (IronRDP fork)
 ```
 
 ---

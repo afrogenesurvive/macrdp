@@ -3,6 +3,28 @@
 Notable changes to macrdp. Entries are `## [<branch>-<n>] — <date>`, where `<n>` is
 one more than the highest existing suffix for that branch.
 
+## [main-3] — 2026-10-13
+
+### Fixed
+
+- GFX/EGFX capability negotiation no longer collapses when a client advertises a
+  capability-set version this build does not recognize. `ironrdp-pdu` is now vendored and
+  patched (`crates/ironrdp-pdu-patched/`) with IronRDP's lossless capability-set
+  representation: `CapabilityVersion` is a plain `u32` and `RawCapabilitySet` keeps an
+  unrecognized version's bytes, so the whole `CapabilitiesAdvertise` PDU can still be
+  decoded and re-encoded. Previously a single unknown version failed that PDU, left
+  `GfxState::is_ready()` false, and silently suppressed all video — the session connected
+  (input and audio worked) but the screen stayed blank. Modern Microsoft clients advertise
+  versions `0x000B0101` / `0x000B0300` that this build had never heard of.
+
+### Changed
+
+- The GFX negotiation now confirms the highest-versioned capability set the client
+  advertised and echoes it back verbatim (so an unrecognized version round-trips on the
+  wire), and treats an unrecognized/newer version as AVC420/AVC444 capable.
+- The display loop logs a one-time warning when it suppresses all frames because GFX/AVC
+  was never negotiated, instead of failing silently.
+
 ## [main-2] — 2026-10-05
 
 ### Added

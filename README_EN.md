@@ -95,8 +95,9 @@ crates/
 ├── macrdp-input/        Keyboard & mouse injection
 ├── macrdp-encode/       Video encoding
 ├── ironrdp-server-gfx/  RDP protocol (IronRDP fork)
-└── ironrdp-acceptor-patched/
-                         RDP connection acceptor
+├── ironrdp-acceptor-patched/
+│                        RDP connection acceptor
+└── ironrdp-pdu-patched/ RDP PDU codec (IronRDP fork)
 ```
 
 ---

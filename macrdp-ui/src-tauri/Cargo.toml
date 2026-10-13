@@ -3,6 +3,7 @@
 [patch.crates-io]
 ironrdp-server = { path = "../../crates/ironrdp-server-gfx" }
 ironrdp-acceptor = { path = "../../crates/ironrdp-acceptor-patched" }
+ironrdp-pdu = { path = "../../crates/ironrdp-pdu-patched" }
 
 [package]
 name = "macrdp-ui"

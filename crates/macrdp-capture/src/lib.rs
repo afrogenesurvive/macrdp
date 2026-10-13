@@ -30,6 +30,42 @@ pub fn open_screen_recording_settings() {
         .spawn();
 }
 
+/// Default timeout for [`wake_display`], in seconds.
+pub const WAKE_DISPLAY_TIMEOUT_SECS: u64 = 5;
+
+/// Wake the display and declare user activity, so capture returns real pixels
+/// after a network wake.
+///
+/// A Wake-on-LAN magic packet only produces a *dark wake* on Apple Silicon: the
+/// system and network come up but the display stays off. ScreenCaptureKit then
+/// has nothing to capture, and the CoreGraphics fallback can return a black
+/// frame — so a Mac woken from the phone shows a black session.
+///
+/// `caffeinate -u` declares that the user is active, which is the documented
+/// mechanism that turns the display on and escalates a dark wake to a full wake
+/// (see `man caffeinate`). It is fire-and-forget: the child exits on its own
+/// after the timeout, by which point real input from the RDP client is keeping
+/// the display awake.
+pub fn wake_display() {
+    match std::process::Command::new("/usr/bin/caffeinate")
+        .args(["-u", "-t"])
+        .arg(WAKE_DISPLAY_TIMEOUT_SECS.to_string())
+        .spawn()
+    {
+        Ok(mut child) => {
+            tracing::info!(
+                "Woke the display for a new session (caffeinate -u, {}s)",
+                WAKE_DISPLAY_TIMEOUT_SECS
+            );
+            // Reap the child so it does not linger as a zombie.
+            std::thread::spawn(move || {
+                let _ = child.wait();
+            });
+        }
+        Err(e) => tracing::warn!("could not run caffeinate to wake the display: {e}"),
+    }
+}
+
 /// A rectangle region
 #[derive(Clone, Debug)]
 pub struct Rect {

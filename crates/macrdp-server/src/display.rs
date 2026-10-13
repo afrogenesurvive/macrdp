@@ -162,6 +162,11 @@ impl RdpServerDisplay for MacDisplay {
     }
 
     async fn updates(&mut self) -> Result<Box<dyn RdpServerDisplayUpdates>> {
+        // A Wake-on-LAN magic packet only dark-wakes the Mac: the system and
+        // network come up but the display stays off, so ScreenCaptureKit (and the
+        // CG fallback) can hand back a black frame. Declare user activity so the
+        // display is on before the first frame is grabbed.
+        macrdp_capture::wake_display();
         let capture_config = CaptureConfig {
             width: self.width as u32,
             height: self.height as u32,
@@ -545,6 +550,13 @@ impl MacDisplayUpdates {
         } else if self.encoder.is_some() {
             // H.264 encoder exists — never send bitmaps, wait for GFX to become ready.
             // Mixing bitmap and GFX causes 0xd06 DECOMPRESSION_FAILED on reconnect.
+            static GFX_SUPPRESSED_WARNED: std::sync::Once = std::sync::Once::new();
+            GFX_SUPPRESSED_WARNED.call_once(|| {
+                tracing::warn!(
+                    "No video: GFX/AVC capability was never negotiated — the client did not \
+                     complete EGFX capability negotiation, so all frames are suppressed"
+                );
+            });
             return Ok(Some(DisplayUpdate::DefaultPointer));
         }
 

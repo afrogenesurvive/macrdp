@@ -8,15 +8,15 @@ use ironrdp_pdu::geometry::InclusiveRectangle;
 use ironrdp_pdu::rdp::vc::dvc::gfx::{
     Avc420BitmapStream, Avc444BitmapStream, CapabilitiesConfirmPdu, CapabilitiesV10Flags,
     CapabilitiesV103Flags, CapabilitiesV104Flags, CapabilitiesV107Flags, CapabilitiesV81Flags,
-    CapabilitySet, ClientPdu, Codec1Type, CreateSurfacePdu, EndFramePdu, Encoding,
-    MapSurfaceToOutputPdu, PixelFormat as GfxPixelFormat, QuantQuality, ResetGraphicsPdu,
+    CapabilitiesV8Flags, CapabilitySet, ClientPdu, Codec1Type, CreateSurfacePdu, EndFramePdu, Encoding,
+    MapSurfaceToOutputPdu, PixelFormat as GfxPixelFormat, QuantQuality, RawCapabilitySet, ResetGraphicsPdu,
     ServerPdu, StartFramePdu, Timestamp, WireToSurface1Pdu,
 };
 use ironrdp_pdu::gcc::{Monitor, MonitorFlags};
 use ironrdp_pdu::{decode, PduResult};
 
 type DvcMessage = ironrdp_dvc::DvcMessage;
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 
 use crate::display::{GfxFrameUpdate, GfxUncompressedUpdate};
 
@@ -128,6 +128,40 @@ fn unwrap_zgfx(data: &[u8]) -> Option<Vec<u8>> {
     }
 }
 
+/// Codec support (AVC420, AVC444) implied by a recognized capability set.
+///
+/// Mirrors the per-version flag semantics of [MS-RDPEGFX] 2.2.3.x.
+fn codec_support(cap: &CapabilitySet) -> (bool, bool) {
+    match cap {
+        CapabilitySet::V8 { .. } => (false, false),
+        CapabilitySet::V8_1 { flags } => (
+            flags.contains(CapabilitiesV81Flags::AVC420_ENABLED),
+            false,
+        ),
+        CapabilitySet::V10 { flags } | CapabilitySet::V10_2 { flags } => {
+            let disabled = flags.contains(CapabilitiesV10Flags::AVC_DISABLED);
+            (!disabled, !disabled)
+        }
+        CapabilitySet::V10_3 { flags } => {
+            let disabled = flags.contains(CapabilitiesV103Flags::AVC_DISABLED);
+            (!disabled, !disabled)
+        }
+        CapabilitySet::V10_4 { flags }
+        | CapabilitySet::V10_5 { flags }
+        | CapabilitySet::V10_6 { flags }
+        | CapabilitySet::V10_6Err { flags } => {
+            let disabled = flags.contains(CapabilitiesV104Flags::AVC_DISABLED);
+            (!disabled, !disabled)
+        }
+        CapabilitySet::V10_7 { flags } => {
+            let disabled = flags.contains(CapabilitiesV107Flags::AVC_DISABLED);
+            (!disabled, !disabled)
+        }
+        // V10_1 carries no flags and always supports AVC.
+        CapabilitySet::V10_1 => (true, true),
+    }
+}
+
 fn make_dvc_message(pdu: &ServerPdu) -> PduResult<DvcMessage> {
     let data = encode_vec(pdu).map_err(|e| ironrdp_pdu::custom_err!("GfxEncode", e))?;
     let wrapped = wrap_zgfx(&data);
@@ -146,7 +180,7 @@ pub struct GfxState {
     pub avc444_supported: bool,
     /// Whether AVC444 is enabled by server config (chroma_mode = "avc444")
     pub avc444_enabled: bool,
-    pub confirmed_cap: Option<CapabilitySet>,
+    pub confirmed_cap: Option<RawCapabilitySet>,
     pub width: u16,
     pub height: u16,
     /// Frames sent but not yet acknowledged
@@ -619,70 +653,57 @@ impl DvcProcessor for GfxHandler {
                     return Ok(Vec::new());
                 }
 
-                let mut best_cap = None;
+                let mut chosen: Option<(RawCapabilitySet, bool, bool)> = None;
 
-                for cap in cap_sets {
-                    match cap {
-                        CapabilitySet::V10_7 { flags } if !flags.contains(CapabilitiesV107Flags::AVC_DISABLED) => {
-                            state.avc420_supported = true;
-                            state.avc444_supported = true;
-                            best_cap = Some(cap.clone());
-                            break;
+                for raw in cap_sets {
+                    let (avc420, avc444) = match raw.parsed() {
+                        Ok(Some(cap)) => codec_support(&cap),
+                        Ok(None) => {
+                            info!(
+                                version = format!("0x{:08X}", raw.version.0),
+                                "GFX: unrecognized capability version — assuming AVC420/AVC444"
+                            );
+                            (true, true)
                         }
-                        CapabilitySet::V10_6 { flags } | CapabilitySet::V10_6Err { flags }
-                            if !flags.contains(CapabilitiesV104Flags::AVC_DISABLED) =>
-                        {
-                            state.avc420_supported = true;
-                            state.avc444_supported = true;
-                            best_cap = Some(cap.clone());
+                        Err(e) => {
+                            warn!(
+                                version = format!("0x{:08X}", raw.version.0),
+                                "GFX: malformed capability set ({e}) — assuming AVC420/AVC444"
+                            );
+                            (true, true)
                         }
-                        CapabilitySet::V10_5 { flags } | CapabilitySet::V10_4 { flags }
-                            if !flags.contains(CapabilitiesV104Flags::AVC_DISABLED) =>
-                        {
-                            state.avc420_supported = true;
-                            state.avc444_supported = true;
-                            if best_cap.is_none() { best_cap = Some(cap.clone()); }
-                        }
-                        CapabilitySet::V10_3 { flags }
-                            if !flags.contains(CapabilitiesV103Flags::AVC_DISABLED) =>
-                        {
-                            state.avc420_supported = true;
-                            state.avc444_supported = true;
-                            if best_cap.is_none() { best_cap = Some(cap.clone()); }
-                        }
-                        CapabilitySet::V10_2 { flags } | CapabilitySet::V10 { flags }
-                            if !flags.contains(CapabilitiesV10Flags::AVC_DISABLED) =>
-                        {
-                            state.avc420_supported = true;
-                            state.avc444_supported = true;
-                            if best_cap.is_none() { best_cap = Some(cap.clone()); }
-                        }
-                        CapabilitySet::V10_1 => {
-                            // V10_1 has no AVC_DISABLED flag — always supports AVC
-                            state.avc420_supported = true;
-                            state.avc444_supported = true;
-                            if best_cap.is_none() { best_cap = Some(cap.clone()); }
-                        }
-                        CapabilitySet::V8_1 { flags }
-                            if flags.contains(CapabilitiesV81Flags::AVC420_ENABLED) =>
-                        {
-                            state.avc420_supported = true;
-                            // V8.1 only supports AVC420, not AVC444
-                            if best_cap.is_none() { best_cap = Some(cap.clone()); }
-                        }
-                        _ => {
-                            if best_cap.is_none() { best_cap = Some(cap.clone()); }
-                        }
+                    };
+
+                    // Keep the client's highest-versioned set: capability sets are
+                    // advertised oldest-first and newer versions are more capable.
+                    let replaces = match &chosen {
+                        Some((current, _, _)) => raw.version.0 > current.version.0,
+                        None => true,
+                    };
+
+                    if replaces {
+                        chosen = Some((raw.clone(), avc420, avc444));
                     }
                 }
 
-                let confirmed = best_cap.unwrap_or(CapabilitySet::V8 {
-                    flags: ironrdp_pdu::rdp::vc::dvc::gfx::CapabilitiesV8Flags::empty(),
-                });
+                let (confirmed, avc420, avc444) = match chosen {
+                    Some((raw, avc420, avc444)) => (raw, avc420, avc444),
+                    None => (
+                        RawCapabilitySet::from(&CapabilitySet::V8 {
+                            flags: CapabilitiesV8Flags::empty(),
+                        }),
+                        false,
+                        false,
+                    ),
+                };
+
+                state.avc420_supported = avc420;
+                state.avc444_supported = avc444;
 
                 info!(
-                    avc420 = state.avc420_supported,
-                    avc444_client = state.avc444_supported,
+                    version = format!("0x{:08X}", confirmed.version.0),
+                    avc420,
+                    avc444_client = avc444,
                     avc444_enabled = state.avc444_enabled,
                     "GFX capabilities negotiated"
                 );
